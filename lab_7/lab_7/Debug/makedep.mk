@@ -2,7 +2,5 @@
 # Automatically-generated file. Do not edit or delete the file
 ################################################################################
 
-lab7_1.c
-
-usart.c
+lab7_4.C
 
