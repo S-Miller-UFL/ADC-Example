@@ -1,9 +1,9 @@
 //*******************************************
-//Lab 7, Section 4
+//Lab 7, Section 5
 //Name: Steven Miller
 //Class #: 11318
 //PI Name: Anthony Stross
-//Description: samples the photoresistor 137 times per second and outputs it to the computer
+//Description: allows you to switch between the photoresistor and the analog input j3
 //*******************************************
 //includes
 #include <avr/interrupt.h>
@@ -13,6 +13,8 @@ volatile int16_t result;
 volatile int8_t bsel = 5;
 volatile int8_t bscale = -6;
 volatile uint8_t adca_ready;
+volatile uint8_t light_true;
+volatile uint8_t function_true;
 int main(void)
 {
 	int8_t upperbyte = 0;
@@ -34,26 +36,27 @@ int main(void)
 			upperbyte = (ADCA.CH0.RESH<<0);
 			lowerbyte = (ADCA.CH0.RESL<<0);
 			//output adca result to computer
-			while(!(USARTD0.STATUS & USART_DREIF_bm))
-			{
-				//do nothing
-			}
 			USARTD0.DATA = lowerbyte;
 			while(!(USARTD0.STATUS & USART_DREIF_bm))
 			{
 				//do nothing
 			}
 			USARTD0.DATA = upperbyte;
+			while(!(USARTD0.STATUS & USART_DREIF_bm))
+			{
+				//do nothing
+			}
 			//reset adca
-			adca_ready = 0;
+			adca_ready =0;
 		}
 	}
 }
 
+//NOTE THAT PHOTORESISTOR IS SET AS DEFAULT UPON BOOTUP
 void adc_init(void)
 {
 	//set port a pin 1 and 6 as inputs
-	PORTA.DIRCLR = (PIN1_bm|PIN6_bm);
+	PORTA.DIRCLR = (PIN1_bm|PIN6_bm|PIN5_bm|PIN4_bm);
 	//set adca as 12 bit signed right adjusted
 	ADCA.CTRLB = (ADC_CONMODE_bm|ADC_RESOLUTION_12BIT_gc);
 	//set adca reference voltage to +2.5V
@@ -95,20 +98,23 @@ void tcc0_init(void)
 
 void usartd0_init(void)
 {
-  //initialize transmitter and reciever pins
+	//initialize transmitter and reciever pins
 	PORTD.OUTSET = PIN3_bm;
 	PORTD.DIRSET = PIN3_bm;
 	PORTD.DIRCLR = PIN2_bm;
 
-  //set baud rate
+	//set baud rate
 	USARTD0.BAUDCTRLA = (uint8_t)bsel;
 	USARTD0.BAUDCTRLB = (uint8_t)((bscale << 4)|(bsel >> 4));
 
-  //set to 8 bit odd parity with 1 stop bit
+	//set to 8 bit odd parity with 1 stop bit
 	USARTD0.CTRLC =	(USART_CMODE_ASYNCHRONOUS_gc |USART_PMODE_ODD_gc| USART_CHSIZE_8BIT_gc)&(~USART_SBMODE_bm);
 
-  //ENABLE TRANSMITTER AND RECIEVER
+	//ENABLE TRANSMITTER AND RECIEVER
 	USARTD0.CTRLB = USART_RXEN_bm | USART_TXEN_bm;
+	
+	//enable interrupts
+	USARTD0.CTRLA = USART_RXCINTLVL_MED_gc;
 }
 
 ISR(ADCA_CH0_vect)
@@ -117,4 +123,24 @@ ISR(ADCA_CH0_vect)
 	//set ADCA_READY flag
 	adca_ready = 1;
 	
+}
+ISR (USARTD0_RXC_vect)
+{
+	char C = USARTD0.DATA;
+	//SWITCH TO FUNCTION GENERATOR
+	if(C == 'F')
+	{
+		//switch ADCA inputs to function generator
+		ADCA.CH0.MUXCTRL = (ADC_CH_MUXPOS_PIN5_gc|ADC_CH_MUXNEG_PIN4_gc);
+		//since ADCA could be in the middle of a conversion, we need to flush the ADC channel
+		ADCA.CTRLA |= (ADC_FLUSH_bm);
+	}
+	//SWITCH TO PHOTORESISTOR
+	else if(C == 'L')
+	{
+		//switch ADCA inputs to function generator
+		ADCA.CH0.MUXCTRL = (ADC_CH_MUXPOS_PIN1_gc|ADC_CH_MUXNEG_PIN6_gc);
+		//since ADCA could be in the middle of a conversion, we need to flush the ADC channel
+		ADCA.CTRLA |= (ADC_FLUSH_bm);
+	}
 }

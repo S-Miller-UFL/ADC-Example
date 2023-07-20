@@ -3,7 +3,7 @@
 //Name: Steven Miller
 //Class #: 11318
 //PI Name: Anthony Stross
-//Description: samples the photoresistor six times per second and outputs it to the computer
+//Description: samples the photoresistor every second and outputs it to the computer
 //*******************************************
 //includes
 #include <avr/interrupt.h>
@@ -35,32 +35,85 @@ int main(void)
 		if(adca_ready)
 		{
 			//output adca result to computer
-			int1 = (int8_t)(result);
-			while(!(USARTD0.STATUS & USART_DREIF_bm))
-			{
-				//do nothing
-			}
-			USARTD0.DATA = int1;
-			result2 =(10*(result-int1));
-			int2 = (int8_t)(result2);
-			while(!(USARTD0.STATUS & USART_DREIF_bm))
-			{
-				//do nothing
-			}
-			USARTD0.DATA = int2;
-			result3 = (10*(result2-int2));
-			int3 =(int8_t)(result3);
-			while(!(USARTD0.STATUS & USART_DREIF_bm))
-			{
-				//do nothing
-			}
-			USARTD0.DATA = int3;
+			/*note that "result" isnt the actual voltage value
+			its the digital representation of the voltage value
+			I.E.: convert "result" into a voltage value then
+			transmit it*/
 			
+			//output positive or negative sign
+			if(result < 0)
+			{
+				result = result*-1;
+				USARTD0.DATA = '-';
+				while(!(USARTD0.STATUS & USART_DREIF_bm))
+				{
+					//do nothing
+				}
+			}
+			else if(result > 0)
+			{
+				USARTD0.DATA = '+';
+				while(!(USARTD0.STATUS & USART_DREIF_bm))
+				{
+					//do nothing
+				}
+			}
+			//convert to voltage value
+			float result_flt = result*.0012;
+			
+			//get first digit and transmit
+			int1 = (uint8_t)(result_flt);
+			USARTD0.DATA = (int1+48);
 			while(!(USARTD0.STATUS & USART_DREIF_bm))
 			{
 				//do nothing
 			}
+			//transmit decimal point
+			USARTD0.DATA = '.';
+			while(!(USARTD0.STATUS & USART_DREIF_bm))
+			{
+				//do nothing
+			}
+			
+			//get second decimal digit and transmit
+			result2 =(10*(result_flt-int1));
+			int2 = (uint8_t)(result2);
+			USARTD0.DATA = (int2+48);
+			while(!(USARTD0.STATUS & USART_DREIF_bm))
+			{
+				//do nothing
+			}
+			
+			//get third decimal digit and transmit
+			result3 = (10*(result2-int2));
+			int3 =(uint8_t)(result3);
+			USARTD0.DATA = (int3+48);
+			while(!(USARTD0.STATUS & USART_DREIF_bm))
+			{
+				//do nothing
+			}
+			
+			//output voltage symbol
 			USARTD0.DATA = 'V';
+			while(!(USARTD0.STATUS & USART_DREIF_bm))
+			{
+				//do nothing
+			}
+			
+			//output carriage return
+			USARTD0.DATA = '\r';
+			while(!(USARTD0.STATUS & USART_DREIF_bm))
+			{
+				//do nothing
+			}
+			
+			//output linefeed
+			USARTD0.DATA = 10;
+			while(!(USARTD0.STATUS & USART_DREIF_bm))
+			{
+				//do nothing
+			}
+			
 			//reset adca
 			adca_ready = 0;
 		}
@@ -119,7 +172,7 @@ void usartd0_init(void)
 
   //set baud rate
 	USARTD0.BAUDCTRLA = (uint8_t)bsel;
-	USARTD0.BAUDCTRLB = (uint8_t)((bscale << 4)|(00 >> 4));
+	USARTD0.BAUDCTRLB = (uint8_t)((bscale << 4)|(bsel >> 8));
 
   //set to 8 bit odd parity with 1 stop bit
 	USARTD0.CTRLC =	(USART_CMODE_ASYNCHRONOUS_gc |USART_PMODE_ODD_gc| USART_CHSIZE_8BIT_gc)&(~USART_SBMODE_bm);
