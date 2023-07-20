@@ -8,6 +8,11 @@
 //includes
 #include <avr/interrupt.h>
 #include <avr/io.h>
+//definitions
+#define byte1_bm (15 << 4)
+#define byte0_bm (15 << 0)
+#define resolution (.00122)
+#define intercept (.00061)
 //variables
 volatile int16_t result;
 volatile int8_t bsel = 5;
@@ -15,11 +20,11 @@ volatile int8_t bscale = -6;
 volatile uint8_t adca_ready;
 int main(void)
 {
- 	float int1 = 0;
-	float int2 = 0;
-	float int3 = 0;
+ 	uint8_t int1 = 0;
+	uint8_t int2 = 0;
+	uint8_t int3 = 0;
 	float result2 =0;
-	float result3 = 0;
+	float result3 =0;
 	//initialize ADC
 	adc_init();
 	//initialize tcc0
@@ -34,12 +39,11 @@ int main(void)
 	{
 		if(adca_ready)
 		{
-			//output adca result to computer
-			/*note that "result" isnt the actual voltage value
-			its the digital representation of the voltage value
-			I.E.: convert "result" into a voltage value then
-			transmit it*/
+			//output ADCA result to computer
 			
+			////////////////////////////////////
+			/*OUTPUT VOLTAGE IN DECIMAL VALUE*/
+			////////////////////////////////////
 			//output positive or negative sign
 			if(result < 0)
 			{
@@ -59,7 +63,7 @@ int main(void)
 				}
 			}
 			//convert to voltage value
-			float result_flt = result*.0012;
+			float result_flt = (result*resolution)+(intercept);
 			
 			//get first digit and transmit
 			int1 = (uint8_t)(result_flt);
@@ -99,20 +103,119 @@ int main(void)
 			{
 				//do nothing
 			}
+			////////////////////////////////////
+			/*END OUTPUT VOLTAGE IN DECIMAL VALUE*/
+			////////////////////////////////////
 			
-			//output carriage return
+			////////////////////////////////////////
+			/*SPACE*/
+			////////////////////////////////////
+			USARTD0.DATA = ' ';
+			while(!(USARTD0.STATUS & USART_DREIF_bm))
+			{
+				//do nothing
+			}
+			////////////////////////////////////////
+			/*END SPACE*/
+			////////////////////////////////////
+			
+			////////////////////////////////////////
+			/*OUTPUT VOLTAGE IN HEXADECIMAL VALUE*/
+			////////////////////////////////////
+			USARTD0.DATA = '(';
+			while(!(USARTD0.STATUS & USART_DREIF_bm))
+			{
+				//do nothing
+			}
+			USARTD0.DATA = '0';
+			while(!(USARTD0.STATUS & USART_DREIF_bm))
+			{
+				//do nothing
+			}
+			USARTD0.DATA = 'x';
+			while(!(USARTD0.STATUS & USART_DREIF_bm))
+			{
+				//do nothing
+			}
+			//CONVERT TO HEX
+			//get byte 0
+			int1 = (result & byte0_bm);
+			if(int1 > 9)
+			{
+				int1 = int1+55;
+			}
+			else
+			{
+				int1 = int1+48;
+			}
+			//get byte 1
+			int2 = (result & byte1_bm);
+			int2 = (int2>>4);
+			if(int2 > 9)
+			{
+				int2 = int2+55;
+			}
+			else
+			{
+				int2 = int2+48;
+			}
+			//get byte 3
+			int3 = (result >> 8);
+			if(int3 > 9)
+			{
+				int3 = int3+55;
+			}
+			else
+			{
+				int3 = int3+48;
+			}
+			USARTD0.DATA = int3;
+			while(!(USARTD0.STATUS & USART_DREIF_bm))
+			{
+				//do nothing
+			}
+			USARTD0.DATA = int2;
+			while(!(USARTD0.STATUS & USART_DREIF_bm))
+			{
+				//do nothing
+			}
+			USARTD0.DATA = int1;
+			while(!(USARTD0.STATUS & USART_DREIF_bm))
+			{
+				//do nothing
+			}
+			USARTD0.DATA = ')';
+			while(!(USARTD0.STATUS & USART_DREIF_bm))
+			{
+				//do nothing
+			}
+			////////////////////////////////////////
+			/*END OUTPUT VOLTAGE IN HEXADECIMAL VALUE*/
+			////////////////////////////////////
+			
+			////////////////////////////////////////
+			/*CARRIAGE RETURN*/
+			////////////////////////////////////
 			USARTD0.DATA = '\r';
 			while(!(USARTD0.STATUS & USART_DREIF_bm))
 			{
 				//do nothing
 			}
+			////////////////////////////////////////
+			/*END CARRIAGE RETURN*/
+			////////////////////////////////////
 			
-			//output linefeed
+			////////////////////////////////////////
+			/*LINEFEED*/
+			////////////////////////////////////
 			USARTD0.DATA = 10;
 			while(!(USARTD0.STATUS & USART_DREIF_bm))
 			{
 				//do nothing
 			}
+			////////////////////////////////////////
+			/*END LINEFEED*/
+			////////////////////////////////////
 			
 			//reset adca
 			adca_ready = 0;

@@ -116,14 +116,14 @@
     <None Include="lab7_2.c">
       <SubType>compile</SubType>
     </None>
-    <None Include="lab7_3.c">
-      <SubType>compile</SubType>
-    </None>
-  </ItemGroup>
-  <ItemGroup>
-    <Compile Include="lab7_5.c">
+    <Compile Include="lab7_3.c">
       <SubType>compile</SubType>
     </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="lab7_5.c">
+      <SubType>compile</SubType>
+    </None>
   </ItemGroup>
   <Import Project="$(AVRSTUDIO_EXE_PATH)\\Vs\\Compiler.targets" />
 </Project>
