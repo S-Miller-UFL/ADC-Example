@@ -59,7 +59,7 @@ void adc_init(void)
 	//set adca reference voltage to +2.5V
 	ADCA.REFCTRL = (0|ADC_REFSEL_AREFB_gc);
 	//set adca channel 0 to differential with gain x1
-	ADCA.CH0.CTRL = (ADC_CH_INPUTMODE_DIFFWGAIN_gc|ADC_CH_GAIN1_bm);
+	ADCA.CH0.CTRL = (ADC_CH_INPUTMODE_DIFFWGAIN_gc);
 	//lower ADCA sampling
 	ADCA.PRESCALER = ADC_PRESCALER_DIV512_gc;
 	//set adca muxpos to port A pin 1 and pin 6
@@ -68,9 +68,6 @@ void adc_init(void)
 	ADCA.CH0.INTCTRL = (ADC_CH_INTMODE_COMPLETE_gc|ADC_CH_INTLVL_MED_gc);
 	//enable conversion trigger on channel event 0
 	ADCA.EVCTRL= (ADC_EVSEL_0123_gc|ADC_EVACT_CH0_gc);
-	//load calibration register with factory values
-	ADCA.CALL = ADCA_CALL;
-	ADCA.CALH = ADCA_CALH;
 	//ENABLE ADC
 	ADCA.CTRLA = (ADC_ENABLE_bm);
 }

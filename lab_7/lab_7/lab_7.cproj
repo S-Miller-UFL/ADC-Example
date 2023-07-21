@@ -110,15 +110,15 @@
     <None Include="lab7_4.C">
       <SubType>compile</SubType>
     </None>
-    <None Include="lab7_1.c">
+    <Compile Include="lab7_1.c">
       <SubType>compile</SubType>
-    </None>
+    </Compile>
     <None Include="lab7_2.c">
       <SubType>compile</SubType>
     </None>
-    <Compile Include="lab7_3.c">
+    <None Include="lab7_3.c">
       <SubType>compile</SubType>
-    </Compile>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <None Include="lab7_5.c">
